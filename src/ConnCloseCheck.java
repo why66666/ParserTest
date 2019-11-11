@@ -13,15 +13,17 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Queue;
+import java.util.Stack;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class ConnCloseCheck {
     private ParserFactory factory;
+
     private ConnCloseCheck() {
         factory = getParserFactory();
     }
 
-    static ConnCloseCheck getInstance(){
+    static ConnCloseCheck getInstance() {
         return new ConnCloseCheck();
     }
 
@@ -36,17 +38,17 @@ public class ConnCloseCheck {
         FileInputStream fin = null;
         FileChannel ch = null;
         ByteBuffer buffer = null;
-        try{
+        try {
             fin = new FileInputStream(file);
             ch = fin.getChannel();
             buffer = ch.map(FileChannel.MapMode.READ_ONLY, 0, ch.size());
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        if(fin!=null){
+        if (fin != null) {
             fin.close();
         }
-        if(ch!=null){
+        if (ch != null) {
             ch.close();
         }
         assert buffer != null;
@@ -54,10 +56,9 @@ public class ConnCloseCheck {
     }
 
 
-
     public void doCheck(String javaPath) throws Exception {
         ClassBean classBean = parseMethodDefs(javaPath);
-        System.out.println(classBean.getNoClose().toString());
+        System.out.println(classBean==null||classBean.getNoClose()==null?"无泄漏":"泄露对象:"+classBean.getNoClose().toString());
     }
 
     private JCTree.JCCompilationUnit parse(String file) throws IOException {
@@ -73,7 +74,7 @@ public class ConnCloseCheck {
 
 
     public static void main(String[] args) {
-        String filePath = "D:\\test\\javaFile\\SysUpdateWF.java";
+        String filePath = "D:\\Work\\WorkFile\\_tom_0magazine__jsp.java";
         try {
             getInstance().doCheck(filePath);
         } catch (Exception e) {
@@ -82,22 +83,34 @@ public class ConnCloseCheck {
     }
 
     private static class MethodScanner extends TreeScanner<ClassBean, ClassBean> {
-        private static LinkedBlockingQueue connStatement;
+        private static Stack connStatement;
+
         MethodScanner() {
-            connStatement = new LinkedBlockingQueue();
+            connStatement = new Stack<String>();
         }
 
         @Override
         public ClassBean visitExpressionStatement(ExpressionStatementTree expressionStatementTree, ClassBean classBean) {
 
             String expressionStatementString = expressionStatementTree.getExpression().toString().trim();
-            expressionStatementString = expressionStatementString.replaceAll("\\s*=\\s*","=");
-            System.out.println("==>"+expressionStatementString);
-            if(expressionStatementString.indexOf("new ConnStatement()")>0){
-                System.out.println(expressionStatementString.substring(0,expressionStatementString.indexOf("=")));
-                connStatement.add(expressionStatementString.substring(0,expressionStatementString.indexOf("=")));
-            }else if(expressionStatementString.indexOf(connStatement.element()+".close()")>0                                                                                    ){
-                connStatement.remove();
+            String statement = expressionStatementString.replaceAll("\\s*=\\s*", "=");
+            if (statement.indexOf("new ConnStatement()") > 0) {
+                System.out.println("进栈语句:"+expressionStatementString);
+                connStatement.push(statement.substring(0, statement.indexOf("=")));
+                System.out.println("进栈:"+statement.substring(0, statement.indexOf("=")));
+            } else if (expressionStatementString.indexOf(".close()") > 0) {
+                System.out.println("出栈判断:"+expressionStatementString);
+                String closePOJO = expressionStatementString.substring(0,expressionStatementString.indexOf(".close()"));
+                if(connStatement.search(closePOJO)>0){
+                    System.out.println("出栈语句:"+expressionStatementString);
+                    if (!connStatement.peek().equals(closePOJO)) {
+                        List<String> cals = classBean.getNoClose();
+                        cals.add((String) connStatement.peek());
+                        classBean.setNoClose(cals);
+                    }
+                    System.out.println("出栈:"+connStatement.peek());
+                    connStatement.pop();
+                }
             }
             return super.visitExpressionStatement(expressionStatementTree, classBean);
         }
