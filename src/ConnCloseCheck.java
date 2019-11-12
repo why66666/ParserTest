@@ -1,5 +1,3 @@
-import com.sun.source.tree.*;
-import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.Parser;
 import com.sun.tools.javac.parser.ParserFactory;
@@ -11,10 +9,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
-import java.util.List;
-import java.util.Queue;
-import java.util.Stack;
-import java.util.concurrent.LinkedBlockingQueue;
 
 public class ConnCloseCheck {
     private ParserFactory factory;
@@ -58,7 +52,7 @@ public class ConnCloseCheck {
 
     public void doCheck(String javaPath) throws Exception {
         ClassBean classBean = parseMethodDefs(javaPath);
-        System.out.println(classBean==null||classBean.getNoClose()==null?"无泄漏":"泄露对象:"+classBean.getNoClose().toString());
+        System.out.println(classBean.getNewClassTrees());
     }
 
     private JCTree.JCCompilationUnit parse(String file) throws IOException {
@@ -70,49 +64,5 @@ public class ConnCloseCheck {
         JCTree.JCCompilationUnit unit = parse(javaPath);
         MethodScanner scanner = new MethodScanner();
         return scanner.visitCompilationUnit(unit, new ClassBean());
-    }
-
-
-    public static void main(String[] args) {
-        String filePath = "D:\\Work\\WorkFile\\_tom_0magazine__jsp.java";
-        try {
-            getInstance().doCheck(filePath);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static class MethodScanner extends TreeScanner<ClassBean, ClassBean> {
-        private static Stack connStatement;
-
-        MethodScanner() {
-            connStatement = new Stack<String>();
-        }
-
-        @Override
-        public ClassBean visitExpressionStatement(ExpressionStatementTree expressionStatementTree, ClassBean classBean) {
-
-            String expressionStatementString = expressionStatementTree.getExpression().toString().trim();
-            String statement = expressionStatementString.replaceAll("\\s*=\\s*", "=");
-            if (statement.indexOf("new ConnStatement()") > 0) {
-                System.out.println("进栈语句:"+expressionStatementString);
-                connStatement.push(statement.substring(0, statement.indexOf("=")));
-                System.out.println("进栈:"+statement.substring(0, statement.indexOf("=")));
-            } else if (expressionStatementString.indexOf(".close()") > 0) {
-                System.out.println("出栈判断:"+expressionStatementString);
-                String closePOJO = expressionStatementString.substring(0,expressionStatementString.indexOf(".close()"));
-                if(connStatement.search(closePOJO)>0){
-                    System.out.println("出栈语句:"+expressionStatementString);
-                    if (!connStatement.peek().equals(closePOJO)) {
-                        List<String> cals = classBean.getNoClose();
-                        cals.add((String) connStatement.peek());
-                        classBean.setNoClose(cals);
-                    }
-                    System.out.println("出栈:"+connStatement.peek());
-                    connStatement.pop();
-                }
-            }
-            return super.visitExpressionStatement(expressionStatementTree, classBean);
-        }
     }
 }

@@ -1,86 +1,38 @@
-
+import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.NewClassTree;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class ClassBean {
-	
-	
-	private List<MethodBean> listMethod = new ArrayList<MethodBean>(); 
-	
-	private String classModifiers;
-	
-	private String name;
-	
-	private boolean isAbstract;
-	
-	private boolean isInterface;
+    static final String CONNSTATEMENT_TYPE = "ConnStatement";
 
-	private List<String> noClose = new ArrayList<>();
+    private ClassTree classTree;
+    private MethodTree methodTree;
+    private List<NewClassTree> newClassTrees = new ArrayList<>();
 
-	private List<String> sqlList = new ArrayList<String>();
+    public ClassTree getClassTree() {
+        return classTree;
+    }
 
-	public String getClassModifiers() {
-		return classModifiers;
-	}
+    public void setClassTree(ClassTree classTree) {
+        this.classTree = classTree;
+    }
 
-	public void setClassModifiers(String classModifiers) {
-		this.classModifiers = classModifiers;
-	}
+    public MethodTree getMethodTree() {
+        return methodTree;
+    }
 
-	public boolean isAbstract() {
-		return isAbstract;
-	}
+    public void setMethodTree(MethodTree methodTree) {
+        this.methodTree = methodTree;
+    }
 
-	public void setAbstract(boolean isAbstract) {
-		this.isAbstract = isAbstract;
-	}
+    public List<NewClassTree> getNewClassTrees() {
+        return newClassTrees;
+    }
 
-	public List<MethodBean> getListMethod() {
-		return listMethod;
-	}
-
-	public void setListMethod(MethodBean classMethod) {
-		this.listMethod.add(classMethod);
-	}
-
-	
-	
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public boolean isInterface() {
-		return isInterface;
-	}
-
-	public void setInterface(boolean isInterface) {
-		this.isInterface = isInterface;
-	}
-
-	@Override
-	public String toString() {
-		return "ClassBean [listMethod=" + listMethod + ", classModifiers=" + classModifiers + ", isAbstract="
-				+ isAbstract + "]";
-	}
-
-	public List<String> getSqlList() {
-		return sqlList;
-	}
-
-	public void setSqlList(String sqlStr) {
-		this.sqlList.add(sqlStr);
-	}
-
-	public List<String> getNoClose() {
-		return noClose;
-	}
-
-	public void setNoClose(List<String> noClose) {
-		this.noClose = noClose;
-	}
+    public void setNewClassTrees(NewClassTree newClassTrees) {
+        this.newClassTrees.add(newClassTrees);
+    }
 }
