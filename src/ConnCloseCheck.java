@@ -52,7 +52,7 @@ public class ConnCloseCheck {
 
     public void doCheck(String javaPath) throws Exception {
         ClassBean classBean = parseMethodDefs(javaPath);
-        System.out.println(classBean.getNewClassTrees());
+        System.out.println(classBean.getNoCloseConns());
     }
 
     private JCTree.JCCompilationUnit parse(String file) throws IOException {
