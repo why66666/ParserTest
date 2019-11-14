@@ -1,7 +1,12 @@
 import com.sun.source.tree.*;
 import com.sun.source.util.TreeScanner;
+import com.sun.tools.corba.se.idl.Util;
 import com.sun.tools.javac.tree.JCTree;
 import jdk.nashorn.internal.codegen.CompilerConstants;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Stack;
 
 public class MethodScanner extends TreeScanner<ClassBean, ClassBean> {
 
@@ -22,9 +27,10 @@ public class MethodScanner extends TreeScanner<ClassBean, ClassBean> {
         for(int i=classBean.getAssignmentTrees().size()-1;i>-1;i--){
             //去除未执行sql的对象
             boolean notDoSql = true;
-            for(int j=0;j<classBean.getDoSqls().size();j++){
-                if(classBean.getDoSqls().get(j).getMethodSelect() instanceof JCTree.JCFieldAccess){
-                    if(classBean.getAssignmentTrees().get(i).getVariable().toString().equals(((JCTree.JCFieldAccess)classBean.getDoSqls().get(j).getMethodSelect()).getExpression().toString())){
+            Map<MethodInvocationTree, Stack<Tree>> map = classBean.getDoSqls();
+            for(Map.Entry<MethodInvocationTree, Stack<Tree>> entry : map.entrySet()){
+                if(entry.getKey().getMethodSelect() instanceof JCTree.JCFieldAccess){
+                    if(classBean.getAssignmentTrees().get(i).getVariable().toString().equals(((JCTree.JCFieldAccess)entry.getKey().getMethodSelect()).getExpression().toString())){
                         notDoSql = false;
                     }
                 }
@@ -71,21 +77,22 @@ public class MethodScanner extends TreeScanner<ClassBean, ClassBean> {
             }
             //是ConnStatement和执行了sql方法的对象存入dosqls
             if(isAssign&&ClassBean.STATEMENTSQL_METHOD.equals(meth.getIdentifier().toString())){
-                classBean.setDoSqls(methodInvocationTree);
+                classBean.setDoSqls(methodInvocationTree,classBean.getTreeStack());
             }
             //是ConnStatement和执行close方法的对象
             else if(isAssign&&ClassBean.CLOSE_METHOD.equals(meth.getIdentifier().toString())){
                 //对象已执行过sql
-                boolean isDosql = false;
-                for (int i=0;i<classBean.getDoSqls().size();i++){
-                    if(classBean.getDoSqls().get(i).getMethodSelect() instanceof JCTree.JCFieldAccess){
-                        if(((JCTree.JCFieldAccess)classBean.getDoSqls().get(i).getMethodSelect()).getExpression().toString().equals(meth.getExpression().toString())){
-                            isDosql = true;
+                boolean isDosqlAndIsSub = false;
+                Map<MethodInvocationTree, Stack<Tree>> map = classBean.getDoSqls();
+                for(Map.Entry<MethodInvocationTree, Stack<Tree>> entry : map.entrySet()){
+                    if(entry.getKey().getMethodSelect() instanceof JCTree.JCFieldAccess){
+                        if(((JCTree.JCFieldAccess)entry.getKey().getMethodSelect()).getExpression().toString().equals(meth.getExpression().toString())&& Utils.hasTree(entry.getValue(),methodInvocationTree)){
+                            isDosqlAndIsSub = true;
                             break;
                         }
                     }
                 }
-                if(isDosql){
+                if(isDosqlAndIsSub){
                     classBean.getAssignmentTrees().remove(indexInAssign);
                 }
             }
@@ -93,4 +100,35 @@ public class MethodScanner extends TreeScanner<ClassBean, ClassBean> {
         super.visitMethodInvocation(methodInvocationTree, classBean);
         return classBean;
     }
+
+    @Override
+    public ClassBean visitForLoop(ForLoopTree forLoopTree, ClassBean classBean) {
+        //存储父节点
+        classBean.setTree(classBean.peekTreeStack());
+        //节点进栈
+        classBean.pushTreeStack(forLoopTree);
+        super.visitForLoop(forLoopTree, classBean);
+        //节点出栈
+        classBean.popTreeStack();
+        //存储父节点
+        classBean.setTree(classBean.peekTreeStack());
+        return classBean;
+    }
+
+
+
+    @Override
+    public ClassBean visitIf(IfTree ifTree, ClassBean classBean) {
+        //存储父节点
+        classBean.setTree(classBean.peekTreeStack());
+        //节点进栈
+        classBean.pushTreeStack(ifTree);
+        super.visitIf(ifTree, classBean);
+        //节点出栈
+        classBean.popTreeStack();
+        //存储父节点
+        classBean.setTree(classBean.peekTreeStack());
+        return classBean;
+    }
+
 }
