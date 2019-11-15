@@ -11,25 +11,18 @@ public class ClassBean {
     private ClassTree classTree;
     //当前方法
     private MethodTree methodTree;
-    //当前for
+    //当前当前所在父节点
     private Tree tree;
-    //当前if
-    private IfTree ifTree;
-    //当前try
-    private TryTree tryTree;
-    //当前catch
-    private CatchTree catchTree;
-    //当前while
-    private WhileLoopTree whileLoopTree;
-    
-    //for栈
+
+    //节点栈
     private Stack<Tree> treeStack = new Stack<>();
-    //所有定义了ConnStatement的对象
-    private List<AssignmentTree> assignmentTrees = new ArrayList<>();
+
+    //所有定义了ConnStatement的对象，节点栈
+    private Map<Tree,Stack<Tree>> assign = new HashMap<>();
     //未释放的对象
-    private List<ExpressionTree> noCloseConns = new ArrayList<>();
+    private List<Tree> noCloseConns = new ArrayList<>();
     //执行了sql的对象
-    private Map<MethodInvocationTree,Stack<Tree>> doSqls = new HashMap<>();
+    private List<MethodInvocationTree> doSqls = new ArrayList<>();
 
     public ClassTree getClassTree() {
         return classTree;
@@ -55,39 +48,6 @@ public class ClassBean {
         this.tree = tree;
     }
 
-    public IfTree getIfTree() {
-        return ifTree;
-    }
-
-    public void setIfTree(IfTree ifTree) {
-        this.ifTree = ifTree;
-    }
-
-    public TryTree getTryTree() {
-        return tryTree;
-    }
-
-    public void setTryTree(TryTree tryTree) {
-        this.tryTree = tryTree;
-    }
-
-    public CatchTree getCatchTree() {
-        return catchTree;
-    }
-
-    public void setCatchTree(CatchTree catchTree) {
-        this.catchTree = catchTree;
-    }
-
-    public WhileLoopTree getWhileLoopTree() {
-        return whileLoopTree;
-    }
-
-    public void setWhileLoopTree(WhileLoopTree whileLoopTree) {
-        this.whileLoopTree = whileLoopTree;
-    }
-    
-
     public Stack<Tree> getTreeStack() {
         return treeStack;
     }
@@ -108,27 +68,27 @@ public class ClassBean {
         return this.treeStack.empty()?null:this.treeStack.peek();
     }
 
-    public List<AssignmentTree> getAssignmentTrees() {
-        return assignmentTrees;
+    public Map<Tree, Stack<Tree>> getAssign() {
+        return assign;
     }
 
-    public void setAssignmentTrees(AssignmentTree assignmentTree) {
-        this.assignmentTrees.add(assignmentTree);
+    public void setAssign(Tree tree, Stack<Tree> stack) {
+        this.assign.put(tree,stack);
     }
 
-    public List<ExpressionTree> getNoCloseConns() {
+    public List<Tree> getNoCloseConns() {
         return noCloseConns;
     }
 
-    public void setNoCloseConns(ExpressionTree noCloseConn) {
+    public void setNoCloseConns(Tree noCloseConn) {
         this.noCloseConns.add(noCloseConn);
     }
 
-    public Map<MethodInvocationTree, Stack<Tree>> getDoSqls() {
+    public List<MethodInvocationTree> getDoSqls() {
         return doSqls;
     }
 
-    public void setDoSqls(MethodInvocationTree tree, Stack<Tree> stack) {
-        this.doSqls.put(tree,stack);
+    public void setDoSqls(MethodInvocationTree doSql) {
+        this.doSqls.add(doSql);
     }
 }

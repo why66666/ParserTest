@@ -1,8 +1,10 @@
+import com.sun.source.tree.Tree;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.Parser;
 import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Context;
+import sun.security.jca.JCAUtil;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -52,7 +54,10 @@ public class ConnCloseCheck {
 
     public void doCheck(String javaPath) throws Exception {
         ClassBean classBean = parseMethodDefs(javaPath);
-        System.out.println(classBean.getNoCloseConns());
+        for (Tree tree :
+                classBean.getNoCloseConns()){
+            System.out.println("tree:"+tree+",pos:"+((JCTree)tree).pos);
+        }
     }
 
     private JCTree.JCCompilationUnit parse(String file) throws IOException {
