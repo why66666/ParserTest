@@ -55,8 +55,8 @@ public class ConnCloseCheck {
     public void doCheck(String javaPath) throws Exception {
         ClassBean classBean = parseMethodDefs(javaPath);
         for (Tree tree :
-                classBean.getNoCloseConns()){
-            System.out.println("tree:"+tree+",pos:"+((JCTree)tree).pos);
+                classBean.getNoCloseConns()) {
+            System.out.println("tree:" + tree + ",pos:" + ((JCTree) tree).pos);
         }
     }
 
@@ -70,4 +70,5 @@ public class ConnCloseCheck {
         MethodScanner scanner = new MethodScanner();
         return scanner.visitCompilationUnit(unit, new ClassBean());
     }
+
 }

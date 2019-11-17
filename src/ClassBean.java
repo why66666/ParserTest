@@ -7,30 +7,26 @@ public class ClassBean {
     static final String STATEMENTSQL_METHOD = "executeUpdate";
     static final String CLOSE_METHOD = "close";
 
-    //当前类
-    private ClassTree classTree;
     //当前方法
     private MethodTree methodTree;
     //当前当前所在父节点
     private Tree tree;
 
+
     //节点栈
     private Stack<Tree> treeStack = new Stack<>();
-
     //所有定义了ConnStatement的对象，节点栈
-    private Map<Tree,Stack<Tree>> assign = new HashMap<>();
+    private Map<Tree, Stack<Tree>> assign = new HashMap<>();
     //未释放的对象
-    private List<Tree> noCloseConns = new ArrayList<>();
+    private Set<Tree> noCloseConns = new HashSet<>();
     //执行了sql的对象
-    private List<MethodInvocationTree> doSqls = new ArrayList<>();
+    private Set<MethodInvocationTree> doSqls = new HashSet<>();
+    //执行了sql方法但未定义
+    private Map<Tree, Stack<Tree>> doSqlsNoAssign = new HashMap<>();
+    //未定义节点
+    private Set<Tree> noAssign = new HashSet<>();
 
-    public ClassTree getClassTree() {
-        return classTree;
-    }
 
-    public void setClassTree(ClassTree classTree) {
-        this.classTree = classTree;
-    }
 
     public MethodTree getMethodTree() {
         return methodTree;
@@ -56,16 +52,16 @@ public class ClassBean {
         this.treeStack = treeStack;
     }
 
-    public void pushTreeStack(Tree tree){
+    public void pushTreeStack(Tree tree) {
         this.treeStack.push(tree);
     }
 
-    public Tree popTreeStack(){
-        return this.treeStack.empty()?null:this.treeStack.pop();
+    public Tree popTreeStack() {
+        return this.treeStack.empty() ? null : this.treeStack.pop();
     }
 
-    public Tree peekTreeStack(){
-        return this.treeStack.empty()?null:this.treeStack.peek();
+    public Tree peekTreeStack() {
+        return this.treeStack.empty() ? null : this.treeStack.peek();
     }
 
     public Map<Tree, Stack<Tree>> getAssign() {
@@ -73,10 +69,11 @@ public class ClassBean {
     }
 
     public void setAssign(Tree tree, Stack<Tree> stack) {
-        this.assign.put(tree,stack);
+        this.assign.put(tree, stack);
     }
 
-    public List<Tree> getNoCloseConns() {
+
+    public Set<Tree> getNoCloseConns() {
         return noCloseConns;
     }
 
@@ -84,11 +81,27 @@ public class ClassBean {
         this.noCloseConns.add(noCloseConn);
     }
 
-    public List<MethodInvocationTree> getDoSqls() {
+    public Set<MethodInvocationTree> getDoSqls() {
         return doSqls;
     }
 
     public void setDoSqls(MethodInvocationTree doSql) {
         this.doSqls.add(doSql);
+    }
+
+    public Map<Tree, Stack<Tree>> getDoSqlsNoAssign() {
+        return doSqlsNoAssign;
+    }
+
+    public void setDoSqlsNoAssign(Tree tree, Stack<Tree> stack) {
+        this.doSqlsNoAssign.put(tree,stack);
+    }
+
+    public Set<Tree> getNoAssign() {
+        return noAssign;
+    }
+
+    public void setNoAssign(Tree noAssign) {
+        this.noAssign.add(noAssign);
     }
 }
