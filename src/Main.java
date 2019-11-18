@@ -1,7 +1,7 @@
 public class Main {
     public static void main(String[] args) {
         long startTime = System.currentTimeMillis();
-        String filePath = "D:\\Work\\WorkFile\\SysUpdateWF.java";
+        String filePath = "D:\\test\\javaFile\\BlogBaseService.java";
 
         try {
             ConnCloseCheck.getInstance().doCheck(filePath);

@@ -20,7 +20,7 @@ public class ClassBean {
     //未释放的对象
     private Set<Tree> noCloseConns = new HashSet<>();
     //执行了sql的对象
-    private Set<MethodInvocationTree> doSqls = new HashSet<>();
+    private Map<MethodInvocationTree,MethodTree> doSqls = new HashMap<>();
     //执行了sql方法但未定义
     private Map<Tree, Stack<Tree>> doSqlsNoAssign = new HashMap<>();
     //未定义节点
@@ -81,12 +81,12 @@ public class ClassBean {
         this.noCloseConns.add(noCloseConn);
     }
 
-    public Set<MethodInvocationTree> getDoSqls() {
+    public Map<MethodInvocationTree, MethodTree> getDoSqls() {
         return doSqls;
     }
 
-    public void setDoSqls(MethodInvocationTree doSql) {
-        this.doSqls.add(doSql);
+    public void setDoSqls(MethodInvocationTree methodInvocationTree, MethodTree methodTree) {
+        this.doSqls.put(methodInvocationTree, methodTree);
     }
 
     public Map<Tree, Stack<Tree>> getDoSqlsNoAssign() {

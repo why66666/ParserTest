@@ -42,9 +42,10 @@ public class MethodScanner extends TreeScanner<ClassBean, ClassBean> {
         //去除未执行sql的对象
         for (Map.Entry<Tree, Stack<Tree>> entry : map.entrySet()) {
             boolean notDoSql = true;
-            for (MethodInvocationTree methodInvocationTree : classBean.getDoSqls()) {
-                if (methodInvocationTree.getMethodSelect() instanceof JCTree.JCFieldAccess) {
-                    if (entry.getKey() instanceof AssignmentTree && ((AssignmentTree) entry.getKey()).getVariable().toString().equals(((JCTree.JCFieldAccess) methodInvocationTree.getMethodSelect()).getExpression().toString())) {
+            Map<MethodInvocationTree,MethodTree> mms = classBean.getDoSqls();
+            for (Map.Entry<MethodInvocationTree,MethodTree> mm: mms.entrySet()) {
+                if (mm.getKey().getMethodSelect() instanceof JCTree.JCFieldAccess) {
+                    if (entry.getKey() instanceof AssignmentTree && ((AssignmentTree) entry.getKey()).getVariable().toString().equals(((JCTree.JCFieldAccess) mm.getKey().getMethodSelect()).getExpression().toString())) {
                         notDoSql = false;
                     }
                 }
@@ -101,6 +102,7 @@ public class MethodScanner extends TreeScanner<ClassBean, ClassBean> {
             boolean isAssign = false;
             Map.Entry<Tree, Stack<Tree>> inAssignEntry = null;
             Map<Tree, Stack<Tree>> map = classBean.getAssign();
+            //遍历定义集合，找到与执行方法对象名相同的语句
             for (Map.Entry<Tree, Stack<Tree>> entry : map.entrySet()) {
                 if (entry.getKey() instanceof AssignmentTree && ((AssignmentTree) entry.getKey()).getVariable().toString().equals(meth.getExpression().toString()) || (entry.getKey() instanceof VariableTree && ((VariableTree) entry.getKey()).getName().toString().equals(meth.getExpression().toString()))) {
                     isAssign = true;
@@ -108,26 +110,24 @@ public class MethodScanner extends TreeScanner<ClassBean, ClassBean> {
                     break;
                 }
             }
-            //是ConnStatement和执行了sql方法的对象存入dosqls
+            //执行了sql方法的对象存入dosqls
             if(isAssign){
                 if (ClassBean.STATEMENTSQL_METHOD.equals(meth.getIdentifier().toString())) {
-                    classBean.setDoSqls(methodInvocationTree);
+                    MethodTree methodTree = classBean.getMethodTree();
+                    classBean.setDoSqls(methodInvocationTree,methodTree);
                 }
-                //是ConnStatement和执行close方法的对象
+                //执行close方法的对象
                 else if (ClassBean.CLOSE_METHOD.equals(meth.getIdentifier().toString())) {
-                    //对象已执行过sql
-                    boolean isDosqlAddIsSame = false;
-                    for (MethodInvocationTree mTree : classBean.getDoSqls()) {
+                    Map<MethodInvocationTree,MethodTree> mms = classBean.getDoSqls();
+                    for (Map.Entry<MethodInvocationTree,MethodTree> mm: mms.entrySet()) {
                         if (methodInvocationTree.getMethodSelect() instanceof JCTree.JCFieldAccess) {
-                            if (((JCTree.JCFieldAccess) mTree.getMethodSelect()).getExpression().toString().equals(meth.getExpression().toString()) && Utils.hasTree(classBean.getTreeStack(), inAssignEntry.getValue().peek())) {
-                                isDosqlAddIsSame = true;
+                            //遍历dosqls，找到与执行方法的对象名相同的项，判断当前执行方法的节点栈是否包含定义语句节点栈，判断是否在执行sql语句的方法内
+                            if (((JCTree.JCFieldAccess) mm.getKey().getMethodSelect()).getExpression().toString().equals(meth.getExpression().toString()) && Utils.hasTree(classBean.getTreeStack(), inAssignEntry.getValue().peek()) && mm.getValue()==classBean.getMethodTree()) {
+                                classBean.getAssign().remove(inAssignEntry.getKey());
+                                classBean.getNoCloseConns().remove(inAssignEntry.getKey());
                                 break;
                             }
                         }
-                    }
-                    if (isDosqlAddIsSame) {
-                        classBean.getAssign().remove(inAssignEntry.getKey());
-                        classBean.getNoCloseConns().remove(inAssignEntry.getKey());
                     }
                 }
             }else{
